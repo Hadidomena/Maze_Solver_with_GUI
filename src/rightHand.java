@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 /*
-Implementation of rightHand algorithm, used in generating Step-by-Step solution for Maze
+Interface for rightHand algorithm, used in generating Step-by-Step solution for Maze
  */
 public class rightHand {
 
@@ -49,7 +49,7 @@ public class rightHand {
                     }
 
                     publish(start); // Publish the new position
-                    Thread.sleep(50); // Wait for a one twentieth of a second between moves
+                    Thread.sleep(25); // Wait for a one fortieth of a second between moves
                 }
 
                 path.add(new Point(start)); // Add the last point
@@ -65,7 +65,7 @@ public class rightHand {
             protected void done() {
                 try {
                     get();
-                    mazePanel.repaint(); // Final repaint after done
+                    mazePanel.repaint(); // Final repaint after ending
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }

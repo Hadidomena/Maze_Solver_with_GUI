@@ -1,5 +1,6 @@
 import java.awt.*;
 
+//Methods used by right hand algorithm
 public class rightHandUtilities {
 
     // Values used to denote elements of maze
@@ -8,8 +9,7 @@ public class rightHandUtilities {
 
     // Checking if you are able to move
     static boolean canMove(Point point, int[][] maze) {
-        return point.x >= 0 && point.x < maze.length && point.y >= 0 && point.y < maze[0].length
-                && maze[point.x][point.y] != WALL;
+        return point.x >= 0 && point.x < maze.length && point.y >= 0 && point.y < maze[0].length && maze[point.x][point.y] != WALL;
     }
 
     // Finding cell marked as a start point

@@ -10,6 +10,7 @@ public class gui {
     private static boolean settingStart = true;
     private static final int size_of_cell = 15;
 
+    // Frame of the app
     public static void mainFrame() {
         final int[][][] map = {{{1}}};
         int x = 1000;
@@ -32,17 +33,14 @@ public class gui {
         designButton(stepByStepButton, x, 2);
         frame.add(stepByStepButton);
 
-        JButton ipsumButton = new JButton("Choose start and end");
-        designButton(ipsumButton, x, 3);
-        frame.add(ipsumButton);
+        JButton startAndEndButton = new JButton("Choose start and end");
+        designButton(startAndEndButton, x, 3);
+        frame.add(startAndEndButton);
 
         JButton saveButton = new JButton("Save as PNG");
         designButton(saveButton, x, 4);
         frame.add(saveButton);
 
-        JScrollBar bar = new JScrollBar();
-        bar.setVisible(true);
-        frame.add(bar);
         frame.setSize(x, y);
         frame.setLayout(null);
         frame.setVisible(true);
@@ -75,7 +73,8 @@ public class gui {
             rightHand.solveMaze(map[0], (JPanel) scrollPane.getViewport().getView());
         });
 
-        ipsumButton.addActionListener(e -> {
+        // After clicking this button you may change the start and end point, previous ones will become blank spaces
+        startAndEndButton.addActionListener(e -> {
             mazePanel.clearMaze(frame, scrollPane);
             scrollPane = mazePanel.drawMaze(map[0], frame);
 
@@ -105,6 +104,7 @@ public class gui {
         saveButton.addActionListener(e -> mazePanel.saveAsPNG((JPanel) scrollPane.getViewport().getView()));
     }
 
+    // Method used to simplify creating buttons
     public static void designButton(JButton button, int x, float which) {
         Font myfont = new Font("Arial", Font.PLAIN, 14);
         button.setBackground(Color.gray);

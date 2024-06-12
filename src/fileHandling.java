@@ -5,6 +5,7 @@ import java.nio.file.Paths;
 
 public class fileHandling {
 
+    // Method used to process binary files with known composition into txt files
     public static void binToTxt(String binaryFilename, String textFilename) {
         try (DataInputStream binary = new DataInputStream(new FileInputStream(binaryFilename));
              BufferedWriter text = new BufferedWriter(new FileWriter(textFilename))) {
@@ -22,7 +23,7 @@ public class fileHandling {
             int exitX = Short.reverseBytes(binary.readShort()) & 0xFFFF;
             int exitY = Short.reverseBytes(binary.readShort()) & 0xFFFF;
 
-            binary.skipBytes(12); // Skip 12 bytes as in the original C code
+            binary.skipBytes(12); // Skip 12 bytes as in table
 
             int counter = Integer.reverseBytes(binary.readInt());
             int solutionOffset = Integer.reverseBytes(binary.readInt());
@@ -60,6 +61,7 @@ public class fileHandling {
         }
     }
 
+    // Method used to read txt files
     public static int[][] readMapFromFile(String filePath) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
 
@@ -108,6 +110,7 @@ public class fileHandling {
         return map;
     }
 
+    // Method used to invoke file reader, it detects if file is binary or txt and then proceeds accordingly
     public static int[][] readMaze (String filepath) {
         try {
             if (filepath.split("\\.")[1].equals("txt") ) {

@@ -2,73 +2,54 @@ import java.util.*;
 import java.util.concurrent.RecursiveAction;
 
 public class bfsUtilities {
-    static int[] find_start(int[][] maze) {
 
+    // Method used for finding start
+    static int[] findStart (int[][] maze) {
         for ( int row = 0; row < maze.length; row++ ) {
-
             for ( int col = 0; col < maze[0].length; col++ ) {
-
                 if ( maze[row][col] == 1 ) {
                     return new int[]{row, col};
                 }
             }
         }
-
         return new int[]{1,0};
     }
 
-    static int[] find_end(int[][] maze) {
-
+    // Method used for finding exit/end of maze
+    static int[] findEnd (int[][] maze) {
         for ( int row = 0; row < maze.length; row++ ) {
-
             for ( int col = 0; col < maze[0].length; col++ ) {
-
                 if ( maze[row][col] == -2 ) {
                     return new int[]{row, col};
                 }
             }
         }
-
         return new int[]{maze.length - 1, maze[0].length};
     }
 
+    // Method used to get cells bordering current cell
     static int[][] get_bordering(int[][] maze, int row, int col) {
         int[][] result = new int[4][3];
+        int[][] offsets = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}}; // row_offset, col_offset
 
-        if ( row > 0 ) {
-            result[0][0] = maze[row - 1][col];
-        } else {
-            result[0][0] = -1;
-        }
-        result[0][1] = row - 1;
-        result[0][2] = col;
+        for (int i = 0; i < 4; i++) {
+            int newRow = row + offsets[i][0];
+            int newCol = col + offsets[i][1];
 
-        if ( col > 0 ) {
-            result[1][0] = maze[row][col - 1];
-        } else {
-            result[1][0] = -1;
-        }
-        result[1][1] = row;
-        result[1][2] = col - 1;
+            if (newRow >= 0 && newRow < maze.length && newCol >= 0 && newCol < maze[0].length) {
+                result[i][0] = maze[newRow][newCol];
+            } else {
+                result[i][0] = -1;
+            }
 
-        if ( row < maze.length - 1 ) {
-            result[2][0] = maze[row + 1][col];
-        } else {
-            result[2][0] = -1;
+            result[i][1] = newRow;
+            result[i][2] = newCol;
         }
-        result[2][1] = row + 1;
-        result[2][2] = col;
-
-        if ( col < maze[0].length - 1 ) {
-            result[3][0] = maze[row][col + 1];
-        } else {
-            result[3][0] = -1;
-        }
-        result[3][1] = row;
-        result[3][2] = col + 1;
 
         return result;
     }
+
+    // Implementation of class used to make bfs algorithm run Parallel
     static class ParallelTask extends RecursiveAction {
         private final int[][] maze;
         private final List<int[]> currentLayer;
@@ -109,19 +90,20 @@ public class bfsUtilities {
         }
     }
 
+    // Method invoked after algorithm has found exit from the maze to create route
     public static void backtrack( int[][] maze, int[] end ) {
         int value_of_field;
         int[][] bordering_current;
         while ( true ) {
             value_of_field = maze[end[0]][end[1]];
-            if (value_of_field <= 0) {
+            if (value_of_field <= 0) { // when we reach entrance method stops
                 return;
             }
             maze[end[0]][end[1]] = -10;
-            bordering_current = bfsUtilities.get_bordering( maze, end[0], end[1] );
+            bordering_current = bfsUtilities.get_bordering( maze, end[0], end[1] ); //getting cells bordering current one
 
             for (int[] cell : bordering_current) {
-                if (cell[0] == value_of_field - 1) {
+                if (cell[0] == value_of_field - 1) { // while backtracking it moves from the current cell to the cell with the value smaller by one
                     end[0] = cell[1];
                     end[1] = cell[2];
                 }

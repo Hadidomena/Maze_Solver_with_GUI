@@ -11,6 +11,8 @@ public class mazePanel {
 
     public static JScrollPane drawMaze(int[][] maze, JFrame frame) {
         JPanel mazePanel = new JPanel() {
+
+            // Method used for drawing maze as provided
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -34,12 +36,14 @@ public class mazePanel {
                 }
             }
 
+            // Method getting size of the Pane based on decided upon size of individual cell and number of cells
             @Override
             public Dimension getPreferredSize() {
                 return new Dimension(maze[0].length * size_of_cell, maze.length * size_of_cell);
             }
         };
 
+        // adding scrollbars to the maze
         JScrollPane scrollPane = new JScrollPane(mazePanel);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -51,6 +55,7 @@ public class mazePanel {
         return scrollPane;
     }
 
+    // Method used to clear maze before loading new one
     public static void clearMaze(JFrame frame, JScrollPane scrollPane) {
         if (scrollPane != null) {
             frame.remove(scrollPane);
@@ -59,6 +64,7 @@ public class mazePanel {
         }
     }
 
+    // Method which clears start or end field, based on the provided value
     public static void clearStartAndEnd(int[][] maze, int value) {
         for (int row = 0; row < maze.length; row++) {
             for (int col = 0; col < maze[row].length; col++) {
@@ -69,6 +75,7 @@ public class mazePanel {
         }
     }
 
+    // Method used to save maze as an image
     public static void saveAsPNG(JPanel mazePanel) {
         int width = mazePanel.getWidth();
         int height = mazePanel.getHeight();
