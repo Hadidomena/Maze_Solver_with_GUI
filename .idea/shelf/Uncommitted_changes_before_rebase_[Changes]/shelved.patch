@@ -1,0 +1,790 @@
+Index: src/fileHandling.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import java.io.BufferedReader;\r\nimport java.io.FileReader;\r\nimport java.io.IOException;\r\n\r\npublic class fileHandling {\r\n\r\n    public static int[][] readMapFromFile(String filePath) throws IOException {\r\n        BufferedReader reader = new BufferedReader(new FileReader(filePath));\r\n\r\n        // First, count the number of lines to determine the size of the array\r\n        int rows = 0;\r\n        int cols = 0;\r\n        String line;\r\n        while ((line = reader.readLine()) != null) {\r\n            rows++;\r\n            if (line.length() > cols) {\r\n                cols = line.length();\r\n            }\r\n        }\r\n\r\n        // Initialize the array\r\n        int[][] map = new int[rows][cols];\r\n\r\n        // Reset the reader to the beginning of the file\r\n        reader.close();\r\n        reader = new BufferedReader(new FileReader(filePath));\r\n\r\n        // Fill the array with the appropriate values\r\n        int row = 0;\r\n        while ((line = reader.readLine()) != null) {\r\n            for (int col = 0; col < line.length(); col++) {\r\n                char ch = line.charAt(col);\r\n                switch (ch) {\r\n                    case 'X':\r\n                        map[row][col] = -1;\r\n                        break;\r\n                    case 'P':\r\n                        map[row][col] = 1;\r\n                        break;\r\n                    case 'K':\r\n                        map[row][col] = -2;\r\n                        break;\r\n                    default:\r\n                        map[row][col] = 0;\r\n                        break;\r\n                }\r\n            }\r\n            row++;\r\n        }\r\n\r\n        reader.close();\r\n        return map;\r\n    }\r\n\r\n    public static void main(String[] args) {\r\n        try {\r\n            int[][] map = readMapFromFile(\"path_to_your_file.txt\");\r\n            // Print the map for verification\r\n            for (int[] row : map) {\r\n                for (int cell : row) {\r\n                    System.out.print(cell + \" \");\r\n                }\r\n                System.out.println();\r\n            }\r\n        } catch (IOException e) {\r\n            e.printStackTrace();\r\n        }\r\n    }\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/fileHandling.java b/src/fileHandling.java
+--- a/src/fileHandling.java	(revision d492be380f2b4ace3203b49e6af9ddfbaec44e03)
++++ b/src/fileHandling.java	(date 1717875300349)
+@@ -1,9 +1,65 @@
+-import java.io.BufferedReader;
+-import java.io.FileReader;
+-import java.io.IOException;
++import java.io.*;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.nio.file.Paths;
+ 
+ public class fileHandling {
+ 
++    public static void binToTxt(String binaryFilename, String textFilename) {
++        try (DataInputStream binary = new DataInputStream(new FileInputStream(binaryFilename));
++             BufferedWriter text = new BufferedWriter(new FileWriter(textFilename))) {
++
++            int currRow = 1;
++            int currCol = 1;
++
++            // Read the header information from the binary file
++            int fileId = Integer.reverseBytes(binary.readInt());
++            byte escape = binary.readByte();
++            int columns = Short.reverseBytes(binary.readShort()) & 0xFFFF;
++            int lines = Short.reverseBytes(binary.readShort()) & 0xFFFF;
++            int entryX = Short.reverseBytes(binary.readShort()) & 0xFFFF;
++            int entryY = Short.reverseBytes(binary.readShort()) & 0xFFFF;
++            int exitX = Short.reverseBytes(binary.readShort()) & 0xFFFF;
++            int exitY = Short.reverseBytes(binary.readShort()) & 0xFFFF;
++
++            binary.skipBytes(12); // Skip 12 bytes as in the original C code
++
++            int counter = Integer.reverseBytes(binary.readInt());
++            int solutionOffset = Integer.reverseBytes(binary.readInt());
++            byte separator = binary.readByte();
++            byte wall = binary.readByte();
++            byte path = binary.readByte();
++
++            while (counter-- > 0) {
++                binary.skipBytes(1);
++                byte value = binary.readByte();
++                int count = Byte.toUnsignedInt(binary.readByte());
++
++                for (int x = 0; x < count + 1; x++) {
++                    if (currRow == entryY && currCol == entryX) {
++                        text.write('P');
++                    } else if (currRow == exitY && currCol == exitX) {
++                        text.write('K');
++                    } else if (value == wall) {
++                        text.write('X');
++                    } else if (value == path) {
++                        text.write(' ');
++                    }
++
++                    currCol++;
++                    if (currCol > columns) {
++                        text.write("\n");
++                        currCol = 1;
++                        currRow++;
++                    }
++                }
++            }
++
++        } catch (IOException e) {
++            System.err.println("Error processing files: " + e.getMessage());
++        }
++    }
++
+     public static int[][] readMapFromFile(String filePath) throws IOException {
+         BufferedReader reader = new BufferedReader(new FileReader(filePath));
+ 
+@@ -52,19 +108,21 @@
+         return map;
+     }
+ 
+-    public static void main(String[] args) {
++    public static int[][] readMaze (String filepath) {
+         try {
+-            int[][] map = readMapFromFile("path_to_your_file.txt");
+-            // Print the map for verification
+-            for (int[] row : map) {
+-                for (int cell : row) {
+-                    System.out.print(cell + " ");
+-                }
+-                System.out.println();
++            if (filepath.split("\\.")[1].equals("txt") ) {
++                return readMapFromFile(filepath);
++            } else if (filepath.split("\\.")[1].equals("bin")) {
++                binToTxt(filepath, "temporary_maze.txt");
++                int[][] output = readMapFromFile("temporary_maze.txt");
++                Path path = Paths.get("temporary_maze.txt");
++                Files.delete(path);
++                return output;
+             }
+         } catch (IOException e) {
+             e.printStackTrace();
+         }
++        return new int[0][0];
+     }
+ 
+ }
+Index: src/Main.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>public class Main {\r\n    public static void main(String[] args) {\r\n        System.out.println(\"Hello world!\");\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Main.java b/src/Main.java
+--- a/src/Main.java	(revision d492be380f2b4ace3203b49e6af9ddfbaec44e03)
++++ b/src/Main.java	(date 1717973770726)
+@@ -1,5 +1,6 @@
+ public class Main {
+     public static void main(String[] args) {
+-        System.out.println("Hello world!");
++        gui GUI = new gui();
++        GUI.mainFrame();
+     }
+ }
+\ No newline at end of file
+Index: src/gui.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>public class gui {\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/gui.java b/src/gui.java
+--- a/src/gui.java	(revision d492be380f2b4ace3203b49e6af9ddfbaec44e03)
++++ b/src/gui.java	(date 1718039440572)
+@@ -1,2 +1,197 @@
++import javax.imageio.ImageIO;
++import javax.swing.*;
++import java.awt.*;
++import java.awt.event.MouseAdapter;
++import java.awt.event.MouseEvent;
++import java.awt.image.BufferedImage;
++import java.io.File;
++import java.io.IOException;
++
+ public class gui {
++
++    private static JScrollPane scrollPane;
++    private static boolean settingStart = true;
++
++    private static void drawMaze(int[][] maze, JFrame frame) {
++        JPanel mazePanel = new JPanel() {
++            @Override
++            protected void paintComponent(Graphics g) {
++                super.paintComponent(g);
++                for (int row = 0; row < maze.length; row++) {
++                    for (int col = 0; col < maze[row].length; col++) {
++                        if (maze[row][col] == -1) {
++                            g.setColor(Color.BLACK);
++                        } else if (maze[row][col] == -10) {
++                            g.setColor(Color.RED);
++                        } else if (maze[row][col] == 1) {
++                            g.setColor(Color.GREEN);
++                        } else if (maze[row][col] == -2) {
++                            g.setColor(Color.BLUE);
++                        } else {
++                            g.setColor(Color.WHITE);
++                        }
++                        g.fillRect(col * 15, row * 15, 15, 15);
++                        g.setColor(Color.GRAY);
++                        g.drawRect(col * 15, row * 15, 15, 15);
++                    }
++                }
++            }
++
++            @Override
++            public Dimension getPreferredSize() {
++                return new Dimension(maze[0].length * 15, maze.length * 15);
++            }
++        };
++
++        scrollPane = new JScrollPane(mazePanel);
++        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
++        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
++        scrollPane.setBounds(0, 50, frame.getWidth() - 15, frame.getHeight() - 85);
++
++        frame.add(scrollPane);
++        frame.revalidate();
++        frame.repaint();
++    }
++
++    private static void clearMaze(JFrame frame) {
++        if (scrollPane != null) {
++            frame.remove(scrollPane);
++            scrollPane = null;
++            frame.revalidate();
++            frame.repaint();
++        }
++    }
++
++    public static void design_button(JButton button, int x, int y, float which) {
++        Font myfont = new Font("Arial", Font.PLAIN, 14);
++        button.setBackground(Color.gray);
++        button.setBounds((int) (x * which / 5), 0, x / 5, 50);
++        button.setFont(myfont);
++    }
++
++    public static void mainFrame() {
++        final int[][][] map = {{{1}}};
++        int x = 1000;
++        int y = 1000;
++
++        JFrame frame = new JFrame("Maze-Solver");
++        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
++        Container c = frame.getContentPane();
++        c.setBackground(Color.darkGray);
++
++        JButton choosingButton = new JButton("Choose Maze");
++        design_button(choosingButton, x, y, 0);
++        frame.add(choosingButton);
++
++        JButton generatingButton = new JButton("Shortest Route");
++        design_button(generatingButton, x, y, 1);
++        frame.add(generatingButton);
++
++        JButton stepByStepButton = new JButton("Step by step Route");
++        design_button(stepByStepButton, x, y, 2);
++        frame.add(stepByStepButton);
++
++        JButton ipsumButton = new JButton("Choose start and end");
++        design_button(ipsumButton, x, y, 3);
++        frame.add(ipsumButton);
++
++        JButton saveButton = new JButton("Save as PNG");
++        design_button(saveButton, x, y, 4);
++        frame.add(saveButton);
++
++        JScrollBar bar = new JScrollBar();
++        bar.setVisible(true);
++        frame.add(bar);
++        frame.setSize(x, y);
++        frame.setLayout(null);
++        frame.setVisible(true);
++
++        choosingButton.addActionListener(e -> {
++            clearMaze(frame);
++            JFileChooser fileChooser = new JFileChooser();
++            int returnValue = fileChooser.showOpenDialog(null);
++            if (returnValue == JFileChooser.APPROVE_OPTION) {
++                File selectedFile = fileChooser.getSelectedFile();
++                String filepath = selectedFile.getAbsolutePath();
++
++                // Call the readMaze method
++                fileHandling fileHandling = new fileHandling();
++                map[0] = fileHandling.readMaze(filepath);
++                drawMaze(map[0], frame);
++                frame.repaint();
++            }
++        });
++
++        generatingButton.addActionListener(e -> {
++            clearMaze(frame);
++            bfs bfs = new bfs();
++            bfs.seed(map[0]);
++            drawMaze(map[0], frame);
++            frame.repaint();
++        });
++
++        stepByStepButton.addActionListener(e -> {
++            clearMaze(frame);
++            drawMaze(map[0], frame);
++            rightHand solver = new rightHand();
++            solver.solveMaze(map[0], (JPanel) scrollPane.getViewport().getView());
++        });
++
++        ipsumButton.addActionListener(e -> {
++            clearMaze(frame);
++            drawMaze(map[0], frame);
++
++            JPanel mazePanel = (JPanel) scrollPane.getViewport().getView();
++            mazePanel.addMouseListener(new MouseAdapter() {
++                @Override
++                public void mouseClicked(MouseEvent e) {
++                    int col = e.getX() / 15;
++                    int row = e.getY() / 15;
++
++                    if (row < map[0].length && col < map[0][0].length) {
++                        if (settingStart) {
++                            clearStartAndEnd(map[0], 1);
++                            map[0][row][col] = 1; // Set start point
++                        } else {
++                            clearStartAndEnd(map[0], -2);
++                            map[0][row][col] = -2; // Set end point
++                        }
++
++                        settingStart = !settingStart;
++                        mazePanel.repaint();
++                    }
++                }
++            });
++        });
++
++        saveButton.addActionListener(e -> saveMazeAsPNG((JPanel) scrollPane.getViewport().getView()));
++    }
++
++    private static void clearStartAndEnd(int[][] maze, int value) {
++        for (int row = 0; row < maze.length; row++) {
++            for (int col = 0; col < maze[row].length; col++) {
++                if (maze[row][col] == value) {
++                    maze[row][col] = 0;
++                }
++            }
++        }
++    }
++
++    private static void saveMazeAsPNG(JPanel mazePanel) {
++        int width = mazePanel.getWidth();
++        int height = mazePanel.getHeight();
++
++        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
++        Graphics2D g2d = image.createGraphics();
++        mazePanel.printAll(g2d);
++        g2d.dispose();
++
++        try {
++            ImageIO.write(image, "png", new File("maze.png"));
++            JOptionPane.showMessageDialog(null, "Maze saved as maze.png");
++        } catch (IOException ex) {
++            ex.printStackTrace();
++            JOptionPane.showMessageDialog(null, "Failed to save the maze image.");
++        }
++    }
+ }
+Index: src/bfs.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import java.util.Arrays;\r\nimport java.util.LinkedList;\r\nimport java.util.Queue;\r\n\r\npublic class bfs {\r\n\r\n    private static int[] find_start(int[][] maze) {\r\n\r\n        for ( int row = 0; row < maze.length; row++ ) {\r\n\r\n            for ( int col = 0; col < maze[0].length; col++ ) {\r\n\r\n                if ( maze[row][col] == 1 ) {\r\n                    return new int[]{row, col};\r\n                }\r\n            }\r\n        }\r\n\r\n        return new int[]{1,0};\r\n    }\r\n\r\n    private static int[] find_end(int[][] maze) {\r\n\r\n        for ( int row = 0; row < maze.length; row++ ) {\r\n\r\n            for ( int col = 0; col < maze[0].length; col++ ) {\r\n\r\n                if ( maze[row][col] == -2 ) {\r\n                    return new int[]{row, col};\r\n                }\r\n            }\r\n        }\r\n\r\n        return new int[]{maze.length - 1, maze[0].length};\r\n    }\r\n\r\n    private static int[][] get_bordering(int[][] maze, int row, int col) {\r\n        int[][] result = new int[4][3];\r\n\r\n        if ( row > 0 ) {\r\n            result[0][0] = maze[row - 1][col];\r\n        } else {\r\n            result[0][0] = -1;\r\n        }\r\n        result[0][1] = row - 1;\r\n        result[0][2] = col;\r\n\r\n        if ( col > 0 ) {\r\n            result[1][0] = maze[row][col - 1];\r\n        } else {\r\n            result[1][0] = -1;\r\n        }\r\n        result[1][1] = row;\r\n        result[1][2] = col - 1;\r\n\r\n        if ( row < maze.length - 1 ) {\r\n            result[2][0] = maze[row + 1][col];\r\n        } else {\r\n            result[2][0] = -1;\r\n        }\r\n        result[2][1] = row + 1;\r\n        result[2][2] = col;\r\n\r\n        if ( col < maze[0].length - 1 ) {\r\n            result[3][0] = maze[row][col + 1];\r\n        } else {\r\n            result[3][0] = -1;\r\n        }\r\n        result[3][1] = row;\r\n        result[3][2] = col + 1;\r\n\r\n        return result;\r\n    }\r\n\r\n    public static void seed(int[][] maze) {\r\n        int[] start = find_start( maze );\r\n        int[] end = find_end( maze );\r\n        int[] current;\r\n        int[][] bordering_current;\r\n        int value_of_field;\r\n        maze[ start[0] ][ start[1] ] = 1;\r\n        maze[ end[0] ][ end[1] ] = -2;\r\n        Queue queue = new LinkedList<>();\r\n\r\n        queue.add( start );\r\n        queue.add( 1 );\r\n\r\n        while ( !queue.isEmpty() ) {\r\n\r\n            current = (int[]) queue.remove( );\r\n            value_of_field = (int) queue.remove();\r\n            maze[current[0]][current[1]] = value_of_field;\r\n            bordering_current = get_bordering( maze, current[0], current[1] );\r\n\r\n            for (int[] cell : bordering_current) {\r\n                if (cell[0] == 0) {\r\n                    queue.add(new int[]{cell[1], cell[2]});\r\n                    queue.add(value_of_field + 1);\r\n                } else if (cell[0] == -2) {\r\n                    maze[cell[1]][cell[2]] = value_of_field + 1;\r\n                    backtrack(maze, end);\r\n                    return;\r\n                }\r\n            }\r\n        }\r\n    }\r\n\r\n    public static void backtrack( int[][] maze, int[] end ) {\r\n        int[] current = end;\r\n        int value_of_field = maze[current[0]][current[1]];\r\n        int[][] bordering_current;\r\n        while ( true ) {\r\n            System.out.println(\"Current value: \" + current[0] + \", \" + current[1] + \", \" + value_of_field);\r\n            value_of_field = maze[current[0]][current[1]];\r\n            if (value_of_field <= 0) {\r\n                return;\r\n            }\r\n            maze[current[0]][current[1]] = -10;\r\n            bordering_current = get_bordering( maze, current[0], current[1] );\r\n\r\n            for (int[] cell : bordering_current) {\r\n                System.out.println(\"Current cell: \" + cell[0] + cell[1] + cell[2]);\r\n                if (cell[0] == value_of_field - 1) {\r\n                    current[0] = cell[1];\r\n                    current[1] = cell[2];\r\n                }\r\n            }\r\n\r\n        }\r\n    }\r\n    public static void main(String[] args) {\r\n\r\n        int[][] maze = {{-1,-1,-1,-1,-1}, {1,0,0,0,-1}, {-1,0,-1,0,-1},{-1,0,0,0,-1}, {-1,-1,-1,-2,-1}};\r\n\r\n        for (int[] line: maze) {\r\n            System.out.println(Arrays.toString(line));\r\n        }\r\n\r\n        seed(maze);\r\n\r\n        for (int[] line: maze) {\r\n            System.out.println(Arrays.toString(line));\r\n        }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/bfs.java b/src/bfs.java
+--- a/src/bfs.java	(revision d492be380f2b4ace3203b49e6af9ddfbaec44e03)
++++ b/src/bfs.java	(date 1718009794117)
+@@ -1,6 +1,11 @@
+ import java.util.Arrays;
+ import java.util.LinkedList;
+ import java.util.Queue;
++import java.util.*;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentLinkedQueue;
++import java.util.concurrent.ForkJoinPool;
++import java.util.concurrent.RecursiveAction;
+ 
+ public class bfs {
+ 
+@@ -73,36 +78,29 @@
+     }
+ 
+     public static void seed(int[][] maze) {
+-        int[] start = find_start( maze );
+-        int[] end = find_end( maze );
+-        int[] current;
+-        int[][] bordering_current;
+-        int value_of_field;
+-        maze[ start[0] ][ start[1] ] = 1;
+-        maze[ end[0] ][ end[1] ] = -2;
+-        Queue queue = new LinkedList<>();
++        int[] start = find_start(maze);
++        int[] end = find_end(maze);
++        maze[start[0]][start[1]] = 1;
++        maze[end[0]][end[1]] = -2;
+ 
+-        queue.add( start );
+-        queue.add( 1 );
++        ConcurrentLinkedQueue<int[]> queue = new ConcurrentLinkedQueue<>();
++        queue.add(start);
++        Map<String, Integer> distance = new ConcurrentHashMap<>();
++        distance.put(Arrays.toString(start), 1);
+ 
+-        while ( !queue.isEmpty() ) {
++        ForkJoinPool pool = new ForkJoinPool();
++        while (!queue.isEmpty()) {
++            int size = queue.size();
++            List<int[]> currentLayer = new ArrayList<>();
++            for (int i = 0; i < size; i++) {
++                currentLayer.add(queue.poll());
++            }
+ 
+-            current = (int[]) queue.remove( );
+-            value_of_field = (int) queue.remove();
+-            maze[current[0]][current[1]] = value_of_field;
+-            bordering_current = get_bordering( maze, current[0], current[1] );
++            pool.invoke(new ParallelTask(maze, currentLayer, queue, distance));
++        }
+ 
+-            for (int[] cell : bordering_current) {
+-                if (cell[0] == 0) {
+-                    queue.add(new int[]{cell[1], cell[2]});
+-                    queue.add(value_of_field + 1);
+-                } else if (cell[0] == -2) {
+-                    maze[cell[1]][cell[2]] = value_of_field + 1;
+-                    backtrack(maze, end);
+-                    return;
+-                }
+-            }
+-        }
++        pool.shutdown();
++        backtrack(maze, end);
+     }
+ 
+     public static void backtrack( int[][] maze, int[] end ) {
+@@ -110,7 +108,6 @@
+         int value_of_field = maze[current[0]][current[1]];
+         int[][] bordering_current;
+         while ( true ) {
+-            System.out.println("Current value: " + current[0] + ", " + current[1] + ", " + value_of_field);
+             value_of_field = maze[current[0]][current[1]];
+             if (value_of_field <= 0) {
+                 return;
+@@ -119,7 +116,6 @@
+             bordering_current = get_bordering( maze, current[0], current[1] );
+ 
+             for (int[] cell : bordering_current) {
+-                System.out.println("Current cell: " + cell[0] + cell[1] + cell[2]);
+                 if (cell[0] == value_of_field - 1) {
+                     current[0] = cell[1];
+                     current[1] = cell[2];
+@@ -128,18 +124,52 @@
+ 
+         }
+     }
+-    public static void main(String[] args) {
++
++    static class ParallelTask extends RecursiveAction {
++        private int[][] maze;
++        private List<int[]> currentLayer;
++        private Queue<int[]> queue;
++        private Map<String, Integer> distance;
+ 
+-        int[][] maze = {{-1,-1,-1,-1,-1}, {1,0,0,0,-1}, {-1,0,-1,0,-1},{-1,0,0,0,-1}, {-1,-1,-1,-2,-1}};
++        ParallelTask(int[][] maze, List<int[]> currentLayer, Queue<int[]> queue, Map<String, Integer> distance) {
++            this.maze = maze;
++            this.currentLayer = currentLayer;
++            this.queue = queue;
++            this.distance = distance;
++        }
+ 
+-        for (int[] line: maze) {
+-            System.out.println(Arrays.toString(line));
+-        }
++        @Override
++        protected void compute() {
++            List<ParallelTask> subtasks = new ArrayList<>();
++
++            for (int[] current : currentLayer) {
++                int value_of_field = distance.get(Arrays.toString(current));
++                int[][] bordering_current = get_bordering(maze, current[0], current[1]);
++
++                for (int[] cell : bordering_current) {
++                    if (cell[0] == 0) {
++                        int[] next = new int[]{cell[1], cell[2]};
++                        synchronized (queue) {
++                            if (!distance.containsKey(Arrays.toString(next))) {
++                                queue.add(next);
++                                distance.put(Arrays.toString(next), value_of_field + 1);
++                                maze[next[0]][next[1]] = value_of_field + 1;
++                            }
++                        }
++                    } else if (cell[0] == -2) {
++                        maze[cell[1]][cell[2]] = value_of_field + 1;
++                        return;
++                    }
++                }
++            }
+ 
+-        seed(maze);
++            for (ParallelTask subtask : subtasks) {
++                subtask.fork();
++            }
+ 
+-        for (int[] line: maze) {
+-            System.out.println(Arrays.toString(line));
++            for (ParallelTask subtask : subtasks) {
++                subtask.join();
++            }
+         }
+     }
+ }
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"c2b01bc7-a711-4b5c-b3e8-cc4db18487b8\" name=\"Changes\" comment=\"Added working implementation of bfs algorithm, also started working on gui and methods to handle files\" />\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Class\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"ProjectColorInfo\">{\r\n  &quot;associatedIndex&quot;: 5\r\n}</component>\r\n  <component name=\"ProjectId\" id=\"2gpkhVuMIWeyAmr4Jd6ewob2oen\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">{\r\n  &quot;keyToString&quot;: {\r\n    &quot;Application.bfs.executor&quot;: &quot;Run&quot;,\r\n    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,\r\n    &quot;git-widget-placeholder&quot;: &quot;master&quot;,\r\n    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,\r\n    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,\r\n    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,\r\n    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,\r\n    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,\r\n    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,\r\n    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;\r\n  }\r\n}</component>\r\n  <component name=\"SharedIndexes\">\r\n    <attachedChunks>\r\n      <set>\r\n        <option value=\"bundled-jdk-9f38398b9061-18abd8497189-intellij.indexing.shared.core-IU-241.14494.240\" />\r\n        <option value=\"bundled-js-predefined-1d06a55b98c1-74d2a5396914-JavaScript-IU-241.14494.240\" />\r\n      </set>\r\n    </attachedChunks>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"c2b01bc7-a711-4b5c-b3e8-cc4db18487b8\" name=\"Changes\" comment=\"\" />\r\n      <created>1716402030994</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1716402030994</updated>\r\n      <workItem from=\"1716402032116\" duration=\"1412000\" />\r\n      <workItem from=\"1717340224301\" duration=\"5596000\" />\r\n      <workItem from=\"1717597128347\" duration=\"5657000\" />\r\n    </task>\r\n    <task id=\"LOCAL-00001\" summary=\"Added working implementation of bfs algorithm, also started working on gui and methods to handle files\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1717603027168</created>\r\n      <option name=\"number\" value=\"00001\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1717603027168</updated>\r\n    </task>\r\n    <option name=\"localTasksCounter\" value=\"2\" />\r\n    <servers />\r\n  </component>\r\n  <component name=\"TypeScriptGeneratedFilesManager\">\r\n    <option name=\"version\" value=\"3\" />\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <MESSAGE value=\"Added working implementation of bfs algorithm, also started working on gui and methods to handle files\" />\r\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"Added working implementation of bfs algorithm, also started working on gui and methods to handle files\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision d492be380f2b4ace3203b49e6af9ddfbaec44e03)
++++ b/.idea/workspace.xml	(date 1718147417727)
+@@ -1,10 +1,24 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
++  <component name="ArtifactsWorkspaceSettings">
++    <artifacts-to-build>
++      <artifact name="Jimp_2_Java:jar" />
++    </artifacts-to-build>
++  </component>
+   <component name="AutoImportSettings">
+     <option name="autoReloadType" value="SELECTIVE" />
+   </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="c2b01bc7-a711-4b5c-b3e8-cc4db18487b8" name="Changes" comment="Added working implementation of bfs algorithm, also started working on gui and methods to handle files" />
++    <list default="true" id="c2b01bc7-a711-4b5c-b3e8-cc4db18487b8" name="Changes" comment="Added working implementation of bfs algorithm, also started working on gui and methods to handle files">
++      <change afterPath="$PROJECT_DIR$/.idea/artifacts/Jimp_2_Java_jar.xml" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/rightHand.java" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/src/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Main.java" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/src/bfs.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bfs.java" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/src/fileHandling.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fileHandling.java" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/src/gui.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui.java" afterDir="false" />
++    </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+@@ -18,8 +32,25 @@
+     </option>
+   </component>
+   <component name="Git.Settings">
++    <option name="RECENT_BRANCH_BY_REPOSITORY">
++      <map>
++        <entry key="$PROJECT_DIR$" value="master" />
++      </map>
++    </option>
+     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+   </component>
++  <component name="GitHubPullRequestSearchHistory">{
++  &quot;lastFilter&quot;: {
++    &quot;state&quot;: &quot;OPEN&quot;,
++    &quot;assignee&quot;: &quot;Hadidomena&quot;
++  }
++}</component>
++  <component name="GithubPullRequestsUISettings">{
++  &quot;selectedUrlAndAccountId&quot;: {
++    &quot;url&quot;: &quot;git@github.com:/Hadidomena/Maze_Solver_with_GUI.git&quot;,
++    &quot;accountId&quot;: &quot;9c372b8a-4d0c-45a1-add5-4fc3fec2db26&quot;
++  }
++}</component>
+   <component name="ProjectColorInfo">{
+   &quot;associatedIndex&quot;: 5
+ }</component>
+@@ -29,20 +60,33 @@
+     <option name="hideEmptyMiddlePackages" value="true" />
+     <option name="showLibraryContents" value="true" />
+   </component>
+-  <component name="PropertiesComponent">{
+-  &quot;keyToString&quot;: {
+-    &quot;Application.bfs.executor&quot;: &quot;Run&quot;,
+-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
++  <component name="PropertiesComponent"><![CDATA[{
++  "keyToString": {
++    "Application.Main.executor": "Run",
++    "Application.bfs.executor": "Run",
++    "Application.fileHandling.executor": "Run",
++    "Application.gui.executor": "Run",
++    "RunOnceActivity.ShowReadmeOnStart": "true",
++    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
++    "git-widget-placeholder": "WIP",
++    "kotlin-language-version-configured": "true",
++    "node.js.detected.package.eslint": "true",
++    "node.js.detected.package.tslint": "true",
++    "node.js.selected.package.eslint": "(autodetect)",
++    "node.js.selected.package.tslint": "(autodetect)",
++    "nodejs_package_manager_path": "npm",
++    "project.structure.last.edited": "Artifacts",
++    "project.structure.proportion": "0.0",
++    "project.structure.side.proportion": "0.2",
++    "settings.editor.selected.configurable": "preferences.pluginManager",
++    "vue.rearranger.settings.migration": "true"
+   }
+-}</component>
++}]]></component>
++  <component name="RecentsManager">
++    <key name="MoveFile.RECENT_KEYS">
++      <recent name="C:\Users\szepiet33\IdeaProjects\Jimp_2_Java" />
++    </key>
++  </component>
+   <component name="SharedIndexes">
+     <attachedChunks>
+       <set>
+@@ -61,7 +105,11 @@
+       <updated>1716402030994</updated>
+       <workItem from="1716402032116" duration="1412000" />
+       <workItem from="1717340224301" duration="5596000" />
+-      <workItem from="1717597128347" duration="5657000" />
++      <workItem from="1717597128347" duration="33290000" />
++      <workItem from="1717973727219" duration="7520000" />
++      <workItem from="1718038657267" duration="1852000" />
++      <workItem from="1718107404906" duration="1299000" />
++      <workItem from="1718146059234" duration="1346000" />
+     </task>
+     <task id="LOCAL-00001" summary="Added working implementation of bfs algorithm, also started working on gui and methods to handle files">
+       <option name="closed" value="true" />
+@@ -71,11 +119,30 @@
+       <option name="project" value="LOCAL" />
+       <updated>1717603027168</updated>
+     </task>
+-    <option name="localTasksCounter" value="2" />
++    <task id="LOCAL-00002" summary="Added working implementation of bfs algorithm, also started working on gui and methods to handle files">
++      <option name="closed" value="true" />
++      <created>1717603178140</created>
++      <option name="number" value="00002" />
++      <option name="presentableId" value="LOCAL-00002" />
++      <option name="project" value="LOCAL" />
++      <updated>1717603178140</updated>
++    </task>
++    <option name="localTasksCounter" value="3" />
+     <servers />
+   </component>
+   <component name="TypeScriptGeneratedFilesManager">
+     <option name="version" value="3" />
++  </component>
++  <component name="Vcs.Log.Tabs.Properties">
++    <option name="TAB_STATES">
++      <map>
++        <entry key="MAIN">
++          <value>
++            <State />
++          </value>
++        </entry>
++      </map>
++    </option>
+   </component>
+   <component name="VcsManagerConfiguration">
+     <MESSAGE value="Added working implementation of bfs algorithm, also started working on gui and methods to handle files" />
+Index: src/META-INF/MANIFEST.MF
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/META-INF/MANIFEST.MF b/src/META-INF/MANIFEST.MF
+new file mode 100644
+--- /dev/null	(date 1718039710772)
++++ b/src/META-INF/MANIFEST.MF	(date 1718039710772)
+@@ -0,0 +1,4 @@
++Manifest-Version: 1.0
++Main-Class: Main
++Application-Icon: maze.png
++
+Index: src/rightHand.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/rightHand.java b/src/rightHand.java
+new file mode 100644
+--- /dev/null	(date 1718014142066)
++++ b/src/rightHand.java	(date 1718014142066)
+@@ -0,0 +1,102 @@
++import javax.swing.*;
++import java.awt.*;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.concurrent.ExecutionException;
++/*
++Implementation of rightHand algorithm, used in generating Step by Step solution for Maze
++ */
++public class rightHand {
++
++    // Values used to denote elements of maze
++    private static final int WALL = -1;
++    private static final int PATH = 0;
++    private static final int START = 1;
++    private static final int END = -2;
++
++    // Directions: right, down, left, up
++    private static final int[] dRow = {0, 1, 0, -1};
++    private static final int[] dCol = {1, 0, -1, 0};
++
++
++    public static void solveMaze(int[][] maze, JPanel mazePanel) {
++        SwingWorker<List<Point>, Point> worker = new SwingWorker<>() {
++            @Override
++            protected List<Point> doInBackground() throws Exception {
++                Point start = findStart(maze);
++                if (start == null) {
++                    throw new IllegalArgumentException("Start point not found in the maze.");
++                }
++
++                List<Point> path = new ArrayList<>();
++                Point current = start;
++                int direction = 0; // Start moving right (East)
++
++                while (maze[current.x][current.y] != END) {
++                    path.add(new Point(current));
++                    maze[current.x][current.y] = -10; // Mark as visited
++
++                    // Check right-hand direction first
++                    int rightDirection = (direction + 1) % 4;
++                    Point rightPoint = new Point(current.x + dRow[rightDirection], current.y + dCol[rightDirection]);
++
++                    if (canMove(rightPoint, maze)) {
++                        direction = rightDirection;
++                        current.setLocation(rightPoint);
++                    } else {
++                        // Move forward if possible, otherwise turn left until we can move
++                        Point nextPoint = new Point(current.x + dRow[direction], current.y + dCol[direction]);
++                        while (!canMove(nextPoint, maze)) {
++                            direction = (direction + 3) % 4; // Turn left
++                            nextPoint = new Point(current.x + dRow[direction], current.y + dCol[direction]);
++                        }
++                        current.setLocation(nextPoint);
++                    }
++
++                    publish(current); // Publish the new position
++                    Thread.sleep(50); // Wait for a one twentieth of a second between moves
++                }
++
++                path.add(new Point(current)); // Add the last point
++                return path;
++            }
++
++            @Override
++            protected void process(List<Point> chunks) {
++                mazePanel.repaint(); // Repaint maze panel for each step
++            }
++
++            @Override
++            protected void done() {
++                try {
++                    List<Point> path = get();
++                    mazePanel.repaint(); // Final repaint after done
++                } catch (InterruptedException | ExecutionException e) {
++                    e.printStackTrace();
++                }
++            }
++        };
++
++        worker.execute();
++    }
++
++    // Checking if you are able to move
++    private static boolean canMove(Point point, int[][] maze) {
++        return point.x >= 0 && point.x < maze.length && point.y >= 0 && point.y < maze[0].length
++                && maze[point.x][point.y] != WALL;
++    }
++
++    // Finding cell marked as a start point
++    private static Point findStart(int[][] maze) {
++        for (int row = 0; row < maze.length; row++) {
++            for (int col = 0; col < maze[row].length; col++) {
++                if (maze[row][col] == START) {
++                    return new Point(row, col);
++                }
++            }
++        }
++        return null;
++    }
++}
++
++
+Index: .idea/artifacts/Jimp_2_Java_jar.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/artifacts/Jimp_2_Java_jar.xml b/.idea/artifacts/Jimp_2_Java_jar.xml
+new file mode 100644
+--- /dev/null	(date 1718039315839)
++++ b/.idea/artifacts/Jimp_2_Java_jar.xml	(date 1718039315839)
+@@ -0,0 +1,8 @@
++<component name="ArtifactManager">
++  <artifact type="jar" name="Jimp_2_Java:jar">
++    <output-path>$PROJECT_DIR$/out/artifacts/Jimp_2_Java_jar</output-path>
++    <root id="archive" name="Jimp_2_Java.jar">
++      <element id="module-output" name="Jimp_2_Java" />
++    </root>
++  </artifact>
++</component>
+\ No newline at end of file
