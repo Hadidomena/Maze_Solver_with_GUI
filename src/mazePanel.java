@@ -7,6 +7,8 @@ import java.io.IOException;
 
 public class mazePanel {
 
+    private static final int size_of_cell = 15;
+
     public static JScrollPane drawMaze(int[][] maze, JFrame frame) {
         JPanel mazePanel = new JPanel() {
             @Override
@@ -25,23 +27,23 @@ public class mazePanel {
                         } else {
                             g.setColor(Color.WHITE);
                         }
-                        g.fillRect(col * 15, row * 15, 15, 15);
+                        g.fillRect(col * size_of_cell, row * size_of_cell, size_of_cell, size_of_cell);
                         g.setColor(Color.GRAY);
-                        g.drawRect(col * 15, row * 15, 15, 15);
+                        g.drawRect(col * size_of_cell, row * size_of_cell, size_of_cell, size_of_cell);
                     }
                 }
             }
 
             @Override
             public Dimension getPreferredSize() {
-                return new Dimension(maze[0].length * 15, maze.length * 15);
+                return new Dimension(maze[0].length * size_of_cell, maze.length * size_of_cell);
             }
         };
 
         JScrollPane scrollPane = new JScrollPane(mazePanel);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        scrollPane.setBounds(0, 50, frame.getWidth() - 15, frame.getHeight() - 85);
+        scrollPane.setBounds(0, 50, frame.getWidth() - size_of_cell, frame.getHeight() - 100 + size_of_cell); // changes to make scroll bar visible
 
         frame.add(scrollPane);
         frame.revalidate();
@@ -80,7 +82,6 @@ public class mazePanel {
             ImageIO.write(image, "png", new File("maze.png"));
             JOptionPane.showMessageDialog(null, "Maze saved as maze.png");
         } catch (IOException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "Failed to save the maze image.");
         }
     }

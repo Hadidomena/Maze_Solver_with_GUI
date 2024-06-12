@@ -4,14 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 /*
-Implementation of rightHand algorithm, used in generating Step by Step solution for Maze
+Implementation of rightHand algorithm, used in generating Step-by-Step solution for Maze
  */
 public class rightHand {
 
-    // Values used to denote elements of maze
-    private static final int WALL = -1;
-    private static final int PATH = 0;
-    private static final int START = 1;
     private static final int END = -2;
 
     // Directions: right, down, left, up
@@ -29,35 +25,34 @@ public class rightHand {
                 }
 
                 List<Point> path = new ArrayList<>();
-                Point current = start;
                 int direction = 0; // Start moving right (East)
 
-                while (maze[current.x][current.y] != END) {
-                    path.add(new Point(current));
-                    maze[current.x][current.y] = -10; // Mark as visited
+                while (maze[start.x][start.y] != END) {
+                    path.add(new Point(start));
+                    maze[start.x][start.y] = -10; // Mark as visited
 
                     // Check right-hand direction first
                     int rightDirection = (direction + 1) % 4;
-                    Point rightPoint = new Point(current.x + dRow[rightDirection], current.y + dCol[rightDirection]);
+                    Point rightPoint = new Point(start.x + dRow[rightDirection], start.y + dCol[rightDirection]);
 
                     if (rightHandUtilities.canMove(rightPoint, maze)) {
                         direction = rightDirection;
-                        current.setLocation(rightPoint);
+                        start.setLocation(rightPoint);
                     } else {
                         // Move forward if possible, otherwise turn left until we can move
-                        Point nextPoint = new Point(current.x + dRow[direction], current.y + dCol[direction]);
+                        Point nextPoint = new Point(start.x + dRow[direction], start.y + dCol[direction]);
                         while (!rightHandUtilities.canMove(nextPoint, maze)) {
                             direction = (direction + 3) % 4; // Turn left
-                            nextPoint = new Point(current.x + dRow[direction], current.y + dCol[direction]);
+                            nextPoint = new Point(start.x + dRow[direction], start.y + dCol[direction]);
                         }
-                        current.setLocation(nextPoint);
+                        start.setLocation(nextPoint);
                     }
 
-                    publish(current); // Publish the new position
+                    publish(start); // Publish the new position
                     Thread.sleep(50); // Wait for a one twentieth of a second between moves
                 }
 
-                path.add(new Point(current)); // Add the last point
+                path.add(new Point(start)); // Add the last point
                 return path;
             }
 
@@ -69,7 +64,7 @@ public class rightHand {
             @Override
             protected void done() {
                 try {
-                    List<Point> path = get();
+                    get();
                     mazePanel.repaint(); // Final repaint after done
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();

@@ -8,6 +8,7 @@ public class gui {
 
     private static JScrollPane scrollPane;
     private static boolean settingStart = true;
+    private static final int size_of_cell = 15;
 
     public static void mainFrame() {
         final int[][][] map = {{{1}}};
@@ -63,7 +64,6 @@ public class gui {
 
         generatingButton.addActionListener(e -> {
             mazePanel.clearMaze(frame, scrollPane);
-            bfs bfs = new bfs();
             bfs.seed(map[0]);
             scrollPane = mazePanel.drawMaze(map[0], frame);
             frame.repaint();
@@ -83,8 +83,8 @@ public class gui {
             MazePanel.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    int col = e.getX() / 15;
-                    int row = e.getY() / 15;
+                    int col = e.getX() / size_of_cell;
+                    int row = e.getY() / size_of_cell;
 
                     if (row < map[0].length && col < map[0][0].length) {
                         if (settingStart) {

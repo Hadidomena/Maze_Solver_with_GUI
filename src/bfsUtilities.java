@@ -70,10 +70,10 @@ public class bfsUtilities {
         return result;
     }
     static class ParallelTask extends RecursiveAction {
-        private int[][] maze;
-        private List<int[]> currentLayer;
-        private Queue<int[]> queue;
-        private Map<String, Integer> distance;
+        private final int[][] maze;
+        private final List<int[]> currentLayer;
+        private final Queue<int[]> queue;
+        private final Map<String, Integer> distance;
 
         ParallelTask(int[][] maze, List<int[]> currentLayer, Queue<int[]> queue, Map<String, Integer> distance) {
             this.maze = maze;
@@ -84,7 +84,6 @@ public class bfsUtilities {
 
         @Override
         protected void compute() {
-            List<ParallelTask> subtasks = new ArrayList<>();
 
             for (int[] current : currentLayer) {
                 int value_of_field = distance.get(Arrays.toString(current));
@@ -107,32 +106,24 @@ public class bfsUtilities {
                 }
             }
 
-            for (ParallelTask subtask : subtasks) {
-                subtask.fork();
-            }
-
-            for (ParallelTask subtask : subtasks) {
-                subtask.join();
-            }
         }
     }
 
     public static void backtrack( int[][] maze, int[] end ) {
-        int[] current = end;
-        int value_of_field = maze[current[0]][current[1]];
+        int value_of_field;
         int[][] bordering_current;
         while ( true ) {
-            value_of_field = maze[current[0]][current[1]];
+            value_of_field = maze[end[0]][end[1]];
             if (value_of_field <= 0) {
                 return;
             }
-            maze[current[0]][current[1]] = -10;
-            bordering_current = bfsUtilities.get_bordering( maze, current[0], current[1] );
+            maze[end[0]][end[1]] = -10;
+            bordering_current = bfsUtilities.get_bordering( maze, end[0], end[1] );
 
             for (int[] cell : bordering_current) {
                 if (cell[0] == value_of_field - 1) {
-                    current[0] = cell[1];
-                    current[1] = cell[2];
+                    end[0] = cell[1];
+                    end[1] = cell[2];
                 }
             }
 

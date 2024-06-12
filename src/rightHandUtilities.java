@@ -4,13 +4,7 @@ public class rightHandUtilities {
 
     // Values used to denote elements of maze
     private static final int WALL = -1;
-    private static final int PATH = 0;
     private static final int START = 1;
-    private static final int END = -2;
-
-    // Directions: right, down, left, up
-    private static final int[] dRow = {0, 1, 0, -1};
-    private static final int[] dCol = {1, 0, -1, 0};
 
     // Checking if you are able to move
     static boolean canMove(Point point, int[][] maze) {
