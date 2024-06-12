@@ -4,14 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 /*
-Implementation of rightHand algorithm, used in generating Step by Step solution for Maze
+Interface for rightHand algorithm, used in generating Step-by-Step solution for Maze
  */
 public class rightHand {
 
-    // Values used to denote elements of maze
-    private static final int WALL = -1;
-    private static final int PATH = 0;
-    private static final int START = 1;
     private static final int END = -2;
 
     // Directions: right, down, left, up
@@ -23,41 +19,40 @@ public class rightHand {
         SwingWorker<List<Point>, Point> worker = new SwingWorker<>() {
             @Override
             protected List<Point> doInBackground() throws Exception {
-                Point start = findStart(maze);
+                Point start = rightHandUtilities.findStart(maze);
                 if (start == null) {
                     throw new IllegalArgumentException("Start point not found in the maze.");
                 }
 
                 List<Point> path = new ArrayList<>();
-                Point current = start;
                 int direction = 0; // Start moving right (East)
 
-                while (maze[current.x][current.y] != END) {
-                    path.add(new Point(current));
-                    maze[current.x][current.y] = -10; // Mark as visited
+                while (maze[start.x][start.y] != END) {
+                    path.add(new Point(start));
+                    maze[start.x][start.y] = -10; // Mark as visited
 
                     // Check right-hand direction first
                     int rightDirection = (direction + 1) % 4;
-                    Point rightPoint = new Point(current.x + dRow[rightDirection], current.y + dCol[rightDirection]);
+                    Point rightPoint = new Point(start.x + dRow[rightDirection], start.y + dCol[rightDirection]);
 
-                    if (canMove(rightPoint, maze)) {
+                    if (rightHandUtilities.canMove(rightPoint, maze)) {
                         direction = rightDirection;
-                        current.setLocation(rightPoint);
+                        start.setLocation(rightPoint);
                     } else {
                         // Move forward if possible, otherwise turn left until we can move
-                        Point nextPoint = new Point(current.x + dRow[direction], current.y + dCol[direction]);
-                        while (!canMove(nextPoint, maze)) {
+                        Point nextPoint = new Point(start.x + dRow[direction], start.y + dCol[direction]);
+                        while (!rightHandUtilities.canMove(nextPoint, maze)) {
                             direction = (direction + 3) % 4; // Turn left
-                            nextPoint = new Point(current.x + dRow[direction], current.y + dCol[direction]);
+                            nextPoint = new Point(start.x + dRow[direction], start.y + dCol[direction]);
                         }
-                        current.setLocation(nextPoint);
+                        start.setLocation(nextPoint);
                     }
 
-                    publish(current); // Publish the new position
-                    Thread.sleep(50); // Wait for a one twentieth of a second between moves
+                    publish(start); // Publish the new position
+                    Thread.sleep(25); // Wait for a one fortieth of a second between moves
                 }
 
-                path.add(new Point(current)); // Add the last point
+                path.add(new Point(start)); // Add the last point
                 return path;
             }
 
@@ -69,8 +64,8 @@ public class rightHand {
             @Override
             protected void done() {
                 try {
-                    List<Point> path = get();
-                    mazePanel.repaint(); // Final repaint after done
+                    get();
+                    mazePanel.repaint(); // Final repaint after ending
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
@@ -78,24 +73,6 @@ public class rightHand {
         };
 
         worker.execute();
-    }
-
-    // Checking if you are able to move
-    private static boolean canMove(Point point, int[][] maze) {
-        return point.x >= 0 && point.x < maze.length && point.y >= 0 && point.y < maze[0].length
-                && maze[point.x][point.y] != WALL;
-    }
-
-    // Finding cell marked as a start point
-    private static Point findStart(int[][] maze) {
-        for (int row = 0; row < maze.length; row++) {
-            for (int col = 0; col < maze[row].length; col++) {
-                if (maze[row][col] == START) {
-                    return new Point(row, col);
-                }
-            }
-        }
-        return null;
     }
 }
 
