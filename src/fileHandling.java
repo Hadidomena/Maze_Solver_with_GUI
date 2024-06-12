@@ -1,8 +1,64 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class fileHandling {
+
+    public static void binToTxt(String binaryFilename, String textFilename) {
+        try (DataInputStream binary = new DataInputStream(new FileInputStream(binaryFilename));
+             BufferedWriter text = new BufferedWriter(new FileWriter(textFilename))) {
+
+            int currRow = 1;
+            int currCol = 1;
+
+            // Read the header information from the binary file
+            int fileId = Integer.reverseBytes(binary.readInt());
+            byte escape = binary.readByte();
+            int columns = Short.reverseBytes(binary.readShort()) & 0xFFFF;
+            int lines = Short.reverseBytes(binary.readShort()) & 0xFFFF;
+            int entryX = Short.reverseBytes(binary.readShort()) & 0xFFFF;
+            int entryY = Short.reverseBytes(binary.readShort()) & 0xFFFF;
+            int exitX = Short.reverseBytes(binary.readShort()) & 0xFFFF;
+            int exitY = Short.reverseBytes(binary.readShort()) & 0xFFFF;
+
+            binary.skipBytes(12); // Skip 12 bytes as in the original C code
+
+            int counter = Integer.reverseBytes(binary.readInt());
+            int solutionOffset = Integer.reverseBytes(binary.readInt());
+            byte separator = binary.readByte();
+            byte wall = binary.readByte();
+            byte path = binary.readByte();
+
+            while (counter-- > 0) {
+                binary.skipBytes(1);
+                byte value = binary.readByte();
+                int count = Byte.toUnsignedInt(binary.readByte());
+
+                for (int x = 0; x < count + 1; x++) {
+                    if (currRow == entryY && currCol == entryX) {
+                        text.write('P');
+                    } else if (currRow == exitY && currCol == exitX) {
+                        text.write('K');
+                    } else if (value == wall) {
+                        text.write('X');
+                    } else if (value == path) {
+                        text.write(' ');
+                    }
+
+                    currCol++;
+                    if (currCol > columns) {
+                        text.write("\n");
+                        currCol = 1;
+                        currRow++;
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error processing files: " + e.getMessage());
+        }
+    }
 
     public static int[][] readMapFromFile(String filePath) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
@@ -52,19 +108,21 @@ public class fileHandling {
         return map;
     }
 
-    public static void main(String[] args) {
+    public static int[][] readMaze (String filepath) {
         try {
-            int[][] map = readMapFromFile("path_to_your_file.txt");
-            // Print the map for verification
-            for (int[] row : map) {
-                for (int cell : row) {
-                    System.out.print(cell + " ");
-                }
-                System.out.println();
+            if (filepath.split("\\.")[1].equals("txt") ) {
+                return readMapFromFile(filepath);
+            } else if (filepath.split("\\.")[1].equals("bin")) {
+                binToTxt(filepath, "temporary_maze.txt");
+                int[][] output = readMapFromFile("temporary_maze.txt");
+                Path path = Paths.get("temporary_maze.txt");
+                Files.delete(path);
+                return output;
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return new int[0][0];
     }
 
 }
